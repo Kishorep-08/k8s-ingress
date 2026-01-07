@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1
+  # labels for deployment. These can be different from pod labels and selector. These are just for deployment identification
+  labels:
+    project: roboshop
+    environment: dev
+    app: app1
+spec:
+  replicas: 2
+  # selector to identify pods managed by deployment
+  selector:
+    matchLabels:
+      project: roboshop
+      environment: dev
+      app: app1
+  template:
+    metadata:
+      # pod template labels. Should match selector
+      labels:
+       project: roboshop
+       environment: dev
+       app: app1
+    spec:
+      containers:
+        - name: app1
+          image: kishore8856/app:v1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1
+spec:
+  selector:
+    project: roboshop
+    environment: dev
+    app: app1
+  ports:
+  - protocol: TCP
+    port: 80   # Service Port
+    targetPort: 80  # Pod Container Port
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app1
+  annotations:
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:368903465982:certificate/5675889e-8842-4594-b459-e379b1292611"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: "ip"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: "app1.kishore-p.space"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: app1
+              port:
+                number: 80
+
+
